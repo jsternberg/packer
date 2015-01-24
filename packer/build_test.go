@@ -239,6 +239,19 @@ func TestBuild_Run_Artifacts(t *testing.T) {
 		t.Fatalf("unexpected ids: %#v", artifactIds)
 	}
 
+	expectedBuildNames := []string{"test"}
+	artifactBuildNames := make([]string, len(artifacts))
+	for i, artifact := range artifacts {
+		buildName, ok := artifact.State("packer.builder.name").(string)
+		if ok {
+			artifactBuildNames[i] = buildName
+		}
+	}
+
+	if !reflect.DeepEqual(artifactBuildNames, expectedBuildNames) {
+		t.Fatalf("unexpected build names: %#v", artifactBuildNames)
+	}
+
 	// Test case: Test that with a single post-processor that doesn't keep
 	// inputs, only that post-processors results are returned.
 	build = testBuild()

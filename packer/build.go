@@ -102,6 +102,11 @@ type coreBuildProvisioner struct {
 	config      []interface{}
 }
 
+type coreBuildArtifact struct {
+	artifact Artifact
+	build    Build
+}
+
 // Returns the name of the build.
 func (b *coreBuild) Name() string {
 	return b.name
@@ -208,6 +213,7 @@ func (b *coreBuild) Run(originalUi Ui, cache Cache) ([]Artifact, error) {
 	if builderArtifact == nil {
 		return nil, nil
 	}
+	builderArtifact = &coreBuildArtifact{artifact: builderArtifact, build: b}
 
 	errors := make([]error, 0)
 	keepOriginalArtifact := len(b.postProcessors) == 0
@@ -258,7 +264,7 @@ PostProcessorRunSeqLoop:
 				}
 			}
 
-			priorArtifact = artifact
+			priorArtifact = &coreBuildArtifact{artifact: artifact, build: b}
 		}
 
 		// Add on the last artifact to the results
@@ -304,4 +310,33 @@ func (b *coreBuild) SetForce(val bool) {
 // Cancels the build if it is running.
 func (b *coreBuild) Cancel() {
 	b.builder.Cancel()
+}
+
+func (a *coreBuildArtifact) BuilderId() string {
+	return a.artifact.BuilderId()
+}
+
+func (a *coreBuildArtifact) Files() []string {
+	return a.artifact.Files()
+}
+
+func (a *coreBuildArtifact) Id() string {
+	return a.artifact.Id()
+}
+
+func (a *coreBuildArtifact) String() string {
+	return a.artifact.String()
+}
+
+func (a *coreBuildArtifact) State(name string) interface{} {
+	switch name {
+	case "packer.builder.name":
+		return a.build.Name()
+	default:
+		return a.artifact.State(name)
+	}
+}
+
+func (a *coreBuildArtifact) Destroy() error {
+	return a.artifact.Destroy()
 }
